@@ -20,10 +20,9 @@ def create_trip_planner_graph_with_supervisor():
     
     # Create supervisor with basic configuration
     return create_supervisor(
-            agents=[research_agent, logistics_agent, restaurant_finder, poi_agent],
+            agents=[logistics_agent, restaurant_finder, poi_agent],
             model=llm,
             supervisor_name="trip_planner_supervisor",
-            parallel_tool_calls=True,
             prompt="""You are a travel planning supervisor. Your role is to:
 1. Coordinate between different specialized agents
 2. Ensure all aspects of the trip are covered
@@ -32,10 +31,8 @@ def create_trip_planner_graph_with_supervisor():
 5. Provide clear and organized responses to the user
 
 IMPORTANT GUIDELINES:
-- Always ensure each agent's response is properly formatted and complete
-- If an agent fails to provide a valid response, retry the request or use an alternative agent
+- If an agent fails to provide a valid response, retry the request
 - Never return empty or malformed responses
-- Always validate the final output before sending it to the user
 - If you encounter any errors, provide a clear error message and suggest next steps""",
         ).compile()
 
