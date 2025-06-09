@@ -17,11 +17,10 @@ def create_trip_planner_graph_with_supervisor():
     logistics_agent = create_logistics_agent(llm)
     restaurant_finder = create_restaurant_finder(llm)
     poi_agent = create_poi_agent(llm)
-    assembler_agent = create_assembler_agent(llm)
     
     # Create supervisor with basic configuration
     return create_supervisor(
-            agents=[research_agent, logistics_agent, restaurant_finder, poi_agent, assembler_agent],
+            agents=[research_agent, logistics_agent, restaurant_finder, poi_agent],
             model=llm,
             supervisor_name="trip_planner_supervisor",
             parallel_tool_calls=True,
@@ -31,7 +30,6 @@ def create_trip_planner_graph_with_supervisor():
 3. Make decisions about which agent should handle each task
 4. Maintain context and continuity in the planning process
 5. Provide clear and organized responses to the user
-6. Use the assembler agent to create a final, well-formatted markdown document
 
 IMPORTANT GUIDELINES:
 - Always ensure each agent's response is properly formatted and complete
