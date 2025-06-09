@@ -107,3 +107,42 @@ def create_poi_agent(llm: ChatOpenAI) -> Any:
         ),
         name="poi_agent",
     )
+
+def create_assembler_agent(llm: ChatOpenAI) -> Any:
+    """Creates an assembler agent that formats all outputs into a nice markdown format."""
+    return create_react_agent(
+        model=llm,
+        tools=[],  # Assembler doesn't need tools as it works with existing data
+        prompt=(
+            """You are a travel plan assembler agent.
+            Your primary responsibility is to combine and format all information from other agents into a beautiful, well-structured markdown document.
+
+            INSTRUCTIONS:
+            1. Collect and organize information from all other agents:
+               - Research findings
+               - Logistics (transportation & accommodation)
+               - Restaurant recommendations
+               - Points of Interest
+               - Any other relevant information
+
+            2. Format the output as a comprehensive markdown document with:
+               - Clear section headers
+               - Bullet points for easy reading
+               - Tables where appropriate
+               - Links to maps and websites
+               - Emojis for visual appeal
+               - Proper markdown formatting
+
+            3. Structure the document with these sections:
+               # Trip Overview
+               ## Transportation
+               ## Accommodation
+               ## Restaurants
+               ## Points of Interest
+               ## Additional Information
+
+            4. After you're done with your tasks, respond to the supervisor directly
+            5. Respond ONLY with the formatted markdown document, do NOT include ANY other text."""
+        ),
+        name="assembler_agent",
+    )
