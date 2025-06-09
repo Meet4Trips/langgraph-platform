@@ -79,7 +79,9 @@ def create_logistics_agent(llm: ChatOpenAI) -> Any:
             - If the following attributes existed, please provide in the response: latitude, longitude, address, phone number, website, email, opening hours, price range, cuisine, reviews, rating, photos, menu, etc.
             - If Places ID existed, use them to create a link (https://www.google.com/maps/search/?api=1&query=Google&query_place_id=$PLACE_ID) to the restaurant.
             - After you're done with your tasks, respond to the supervisor directly
-            - Respond ONLY with the results of your work, do NOT include ANY other text."""
+            - Respond ONLY with the results of your work, do NOT include ANY other text.
+            - If a tool call fails, retry up to 3 times before reporting an error.
+            - Always ensure you provide a response for every tool call you make."""
         ),
         name="logistics_agent",
     )
@@ -141,8 +143,14 @@ def create_assembler_agent(llm: ChatOpenAI) -> Any:
                ## Points of Interest
                ## Additional Information
 
-            4. After you're done with your tasks, respond to the supervisor directly
-            5. Respond ONLY with the formatted markdown document, do NOT include ANY other text."""
+            4. Error Handling:
+               - If any section is missing information, note it as "Information pending"
+               - If an agent's response is invalid or empty, skip that section
+               - Always ensure the document is valid markdown
+               - Never include raw error messages or invalid content
+
+            5. After you're done with your tasks, respond to the supervisor directly
+            6. Respond ONLY with the formatted markdown document, do NOT include ANY other text."""
         ),
         name="assembler_agent",
     )

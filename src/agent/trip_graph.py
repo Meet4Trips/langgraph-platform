@@ -31,7 +31,14 @@ def create_trip_planner_graph_with_supervisor():
 3. Make decisions about which agent should handle each task
 4. Maintain context and continuity in the planning process
 5. Provide clear and organized responses to the user
-6. Use the assembler agent to create a final, well-formatted markdown document""",
+6. Use the assembler agent to create a final, well-formatted markdown document
+
+IMPORTANT GUIDELINES:
+- Always ensure each agent's response is properly formatted and complete
+- If an agent fails to provide a valid response, retry the request or use an alternative agent
+- Never return empty or malformed responses
+- Always validate the final output before sending it to the user
+- If you encounter any errors, provide a clear error message and suggest next steps""",
         ).compile()
 
 # Create the graph instance

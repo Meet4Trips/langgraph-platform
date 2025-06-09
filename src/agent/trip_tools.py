@@ -2,6 +2,25 @@ from langchain_core.tools import tool
 from langchain_tavily import TavilySearch
 from langchain_google_community import GooglePlacesTool
 from typing import Literal
+import time
+from functools import wraps
+
+def retry_on_failure(max_retries=3, delay=1):
+    """Decorator to retry a function on failure."""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            last_error = None
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    last_error = e
+                    if attempt < max_retries - 1:
+                        time.sleep(delay)
+            raise last_error
+        return wrapper
+    return decorator
 
 @tool
 def search_destinations(query: str) -> str:
@@ -16,12 +35,14 @@ def search_weather(location: str) -> str:
     return tavily.invoke(f"Weather in {location}")
 
 @tool
+@retry_on_failure(max_retries=3)
 def search_flights(origin: str, destination: str, dates: str) -> str:
     """Search for flight options."""
     tavily = TavilySearch(max_results=3)
     return tavily.invoke(f"Flight options from {origin} to {destination} on {dates}")
 
 @tool
+@retry_on_failure(max_retries=3)
 def search_hotels(
     location: str, 
     *,  # Force keyword arguments after this point
