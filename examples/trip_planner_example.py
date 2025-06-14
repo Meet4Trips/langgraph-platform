@@ -21,10 +21,6 @@ async def main():
     
     # Run the trip planner
     result = await graph.ainvoke(initial_state)
-    
-    # Print the result
-    print("\nTrip Planner Response:")
-    print(result)
 
 if __name__ == "__main__":
     asyncio.run(main()) 

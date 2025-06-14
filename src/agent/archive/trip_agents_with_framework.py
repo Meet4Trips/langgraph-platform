@@ -20,6 +20,8 @@ from src.agent.trip_tools import (
 )
 
 class BaseAgent:
+    name = "base_agent"  # Default name for all agents
+    
     def __init__(self, llm: ChatOpenAI):
         self.llm = llm
         self.output_parser = StrOutputParser()
@@ -39,8 +41,7 @@ class BaseAgent:
             self.bind_tools()
         
         # Update current_agent in state using the class name
-        agent_name = self.__class__.__name__
-        state["current_agent"] = agent_name
+        state["current_agent"] = self.name
         
         # Get the last message from the state
         messages = state.get("messages", [])
@@ -51,7 +52,7 @@ class BaseAgent:
         response = self.llm_with_tools.invoke(self.prompt.invoke(messages))
         
         # Update the state with the response
-        return {"messages": [response], "current_agent": agent_name}
+        return {"messages": [response], "current_agent": self.name}
 
 class CoordinatorAgent(BaseAgent):
     """Main coordinator that manages the overall trip planning process."""
@@ -128,15 +129,24 @@ class BudgetEstimator(BaseAgent):
 
 class LogisticsAgent(BaseAgent):
     """Handles transportation and accommodation bookings."""
+    name = "logistics_agent"
     
     def __init__(self, llm: ChatOpenAI):
         super().__init__(llm)
         self.prompt = ChatPromptTemplate.from_messages([
-            SystemMessage(content="""You are the LogisticsAgent.  
-                Your primary responsibility is to find accommodation and transportation options based on the user's preferences flights, trains, car rental, hotels.  
-                Please only respond to queries about accommodation and transportation searching and recommendations.  
-                If a request is outside your scope, explain your primary responsibility and reply with:  
-                I'm sorry, but I am not designed to handle that request. Please ask the appropriate agent."""),
+            SystemMessage(content="""You are a logistics agent.
+            Your primary responsibility is to find accommodation and transportation options based on the user's preferences flights, trains, car rental, hotels. 
+            INSTRUCTIONS:
+            - Please only respond to queries about accommodation and transportation searching and recommendations.  
+            - Analyze user's query and conversation history to determine if the user is asking for accommodation and transportation or contribute accommodation and transportation information to trip planner (supervisor).
+            - If a request is outside your scope, explain your primary responsibility and reply with:  
+                I'm sorry, but I am not designed to handle that request. Please ask the appropriate agent.
+            - If the following attributes existed, please provide in the response: latitude, longitude, address, phone number, website, email, opening hours, price range, reviews, rating, photos, etc.
+            - If Places ID existed, use them to create a link (https://www.google.com/maps/search/?api=1&query=Google&query_place_id=$PLACE_ID) to the accommodation.
+            - After you're done with your tasks, respond to the supervisor directly
+            - Respond ONLY with the results of your work, do NOT include ANY other text.
+            - If a tool call fails, retry up to 3 times before reporting an error.
+            - Always ensure you provide a response for every tool call you make."""),
             ("user", "{input}")
         ])
         self.tools = LOGISTICS_TOOLS
@@ -144,16 +154,24 @@ class LogisticsAgent(BaseAgent):
 
 class POIRecommender(BaseAgent):
     """Recommends points of interest and attractions."""
+    name = "poi_agent"
     
     def __init__(self, llm: ChatOpenAI):
         super().__init__(llm)
         self.prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are a local attractions expert. Your role is to:
-            1. Research points of interest
-            2. Consider user preferences and interests
-            3. Evaluate attraction ratings and reviews
-            4. Account for seasonal availability
-            5. Provide personalized recommendations"""),
+            SystemMessage(content="""You are a POI (points of interest) agent.
+            Your primary responsibility is to find the best places to visit based on the user's preferences such as museums, parks, landmarks, etc. 
+            INSTRUCTIONS:
+            - Please only respond to queries about points of interest searching and recommendations.
+            - Analyze user's query and conversation history to determine if the user is asking for points of interest or contribute points of interest information to trip planner (supervisor).
+            - If a request is outside your scope, explain your primary responsibility and reply with:  
+                I'm sorry, but I am not designed to handle that request. Please ask the appropriate agent.
+            - If the following attributes existed, please provide in the response: latitude, longitude, address, phone number, website, email, opening hours, price range, reviews, rating, photos, etc.
+            - If Places ID existed, use them to create a link (https://www.google.com/maps/search/?api=1&query=Google&query_place_id=$PLACE_ID) to the point of interest.
+            - After you're done with your tasks, respond to the supervisor directly
+            - Respond ONLY with the results of your work, do NOT include ANY other text.
+            - If a tool call fails, retry up to 3 times before reporting an error.
+            - Always ensure you provide a response for every tool call you make."""),
             ("user", "{input}")
         ])
         self.tools = POI_TOOLS
@@ -161,15 +179,21 @@ class POIRecommender(BaseAgent):
 
 class RestaurantFinder(BaseAgent):
     """Finds and recommends restaurants."""
+    name = "restaurant_finder"
     
     def __init__(self, llm: ChatOpenAI):
         super().__init__(llm)
         self.prompt = ChatPromptTemplate([
-            SystemMessage(content="""You are the RestaurantFinder.  
-                Your primary responsibility is to find restaurants based on the user's preferences such as cuisine, price range, and location.  
-                Please only respond to queries about restaurants searching and recommendations.  
-                If a request is outside your scope, explain your primary responsibility and reply with:  
-                I'm sorry, but I am not designed to handle that request. Please ask the appropriate agent."""),
+            SystemMessage(content="""You are a restaurant finder agent.
+            Your primary responsibility is to find restaurants based on the user's preferences such as cuisine, price range, and location. 
+            INSTRUCTIONS:
+            - Please only respond to queries about restaurants searching and recommendations.  
+            - Analyze user's query and conversation history to determine if the user is asking for restaurants or contribute restaurant information to trip planner (supervisor).
+            - If a request is outside your scope, explain your primary responsibility and reply with:  
+                I'm sorry, but I am not designed to handle that request. Please ask the appropriate agent.
+            - If Places ID existed, use them to create a link (https://www.google.com/maps/search/?api=1&query=Google&query_place_id=$PLACE_ID) to the restaurant.
+            - After you're done with your tasks, respond to the supervisor directly
+            - Respond ONLY with the results of your work, do NOT include ANY other text."""),
             ("user", "{input}")
         ])
         self.tools = RESTAURANT_TOOLS
@@ -272,3 +296,4 @@ class DynamicToolNode:
                 )
             )
         return {"messages": outputs}  # Return both messages and updated state
+    
