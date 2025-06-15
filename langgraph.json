@@ -4,5 +4,8 @@
     "agent": "./src/agent/trip_graph.py:trip_planner_graph"
   },
   "python_version": "3.13",
-  "env": ".env"
+  "env": ".env",
+  "auth": {
+    "path": "./src/agent/auth.py:supabase_jwt_auth"
+  }
 }
