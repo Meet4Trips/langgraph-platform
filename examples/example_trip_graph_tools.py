@@ -1,54 +1,59 @@
-from venv import logger
-from langgraph_supervisor import create_supervisor
+from typing import Annotated
 
-from agent.utils.configuration import Configuration
-from src.agent.trip_agents import (
-    create_logistics_agent,
-    create_poi_agent,
-    create_research_agent,
-    create_restaurant_finder,
-)
-from langchain_openai import ChatOpenAI
+from langgraph.graph import START, END, StateGraph, MessagesState
+from langgraph.graph.message import add_messages
+from typing_extensions import TypedDict
 
-def create_trip_planner_graph_with_supervisor():
+import json
+from langchain.chat_models import init_chat_model
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import SystemMessage
 
-    # Initialize LLM
-    llm = ChatOpenAI(model="gpt-4o-mini")
+from langchain_core.messages import ToolMessage
+from langchain_core.tools import tool
+from langgraph.types import interrupt
 
-    research_agent = create_research_agent()
-    logistics_agent = create_logistics_agent()
-    poi_recommender = create_poi_agent()
-    restaurant_finder = create_restaurant_finder()
-    
-    # Create supervisor with basic configuration
-    return create_supervisor(
-            agents=[logistics_agent, restaurant_finder, poi_recommender, research_agent],
-            model=llm,
-            config_schema=Configuration,
-            # parallel_tool_calls=True,
-            # output_mode="last_message",
-            include_agent_name=None,
-            supervisor_name="trip_planner_supervisor",
-            prompt="""You are a travel planning supervisor and document assembler. Your role is to:
+from tool.tools import search_restaurants, search_hotels, search_attractions, search_flights, search_weather
 
-1. COORDINATION RESPONSIBILITIES:
-   - Coordinate between different specialized agents:
-     * logistics_agent: to find accommodation and transportation options
-     * restaurant_finder: to find restaurants
-     * poi_agent: to find points of interest
-     * research_agent: to find additional information
-   - Utilize the different agents to collect information from different aspects of the trip, and then assemble the information into a final travel plan. (see 2. DOCUMENT ASSEMBLY RESPONSIBILITIES)
-   - Carefully analyze each user request to determine which agent(s) should handle it
-   - If a request involves multiple aspects, coordinate with multiple agents
-   - When routing requests to agents, provide clear, specific instructions
-   - If an agent indicates a request is outside their scope, immediately route to the correct agent
-   - Maintain context between agent interactions to ensure continuity
+@tool
+def human_assistance(query: str) -> str:
+    """
+    Request assistance from a human.
+    """
+    humane_response = interrupt({"query": query})
+    return humane_response["data"]
+
+
+tools = [human_assistance, search_restaurants, search_hotels, search_attractions, search_flights, search_weather] 
+
+class State(TypedDict):
+    messages: Annotated[list, add_messages]
+
+# No need to set it again since it's already loaded from .env
+
+llm = init_chat_model("openai:gpt-4o-mini")
+
+llm_with_tools = llm.bind_tools(tools)
+
+prompt = ChatPromptTemplate([
+            SystemMessage(content="""You are a travel planning assistant and document assembler. Your role is to:
+
+1. Trip Assistant and planner RESPONSIBILITIES:
+   - Access to all tools [search_weather, search_flights, search_hotels, search_attractions, search_restaurants] to find accommodation and transportation options, restaurants, points of interest, and additional information
+     * search_weather: to find weather information
+     * search_flights: to find flights information
+     * search_hotels: to find hotels information
+     * search_attractions: to find attractions information
+     * search_restaurants: to find restaurants information
+   - Please primary focus on the user's request and use the tools to find the information
+   - If the user's request is not related to the trip planning or related to the tools, please respond with: I'm sorry, but I am not designed to handle that request. Please ask the appropriate agent.
+   - For trip planning, please use the tools to search all information including hotels, restaurants, points of interest, and additional information, and then assemble the information into a final travel plan (see 2. DOCUMENT ASSEMBLY RESPONSIBILITIES).
 
 2. DOCUMENT ASSEMBLY RESPONSIBILITIES:
-   Your primary responsibility is to combine and format all information from other agents to draft the final travel plan into a beautiful, well-structured markdown document.
+   Your primary responsibility is to combine and format all information from the tools to draft the final travel plan into a beautiful, well-structured markdown document.
 
    INSTRUCTIONS:
-   1. Collect and organize information from all other agents:
+   1. Collect and organize information from the tools:
       - Research findings
       - Logistics (transportation & accommodation)
       - Restaurant recommendations
@@ -180,18 +185,78 @@ def create_trip_planner_graph_with_supervisor():
       - Never include raw error messages or invalid content
 
 IMPORTANT GUIDELINES:
-- Always ensure each agent's response is properly formatted and complete
-- If an agent fails to provide a valid response, retry the request
+- Always ensure the response is properly formatted and complete
+- If the response is invalid or empty, retry the request
 - Never return empty or malformed responses
 - Always validate the final output before sending it to the user
 - If you encounter any errors, provide a clear error message and suggest next steps
-- When an agent indicates they're not responsible, handle it gracefully by routing to the correct agent
-- Keep track of which agents have been consulted to avoid redundant requests
 - Ensure the final markdown document is well-structured and visually appealing
-- Include all relevant information from each agent in the appropriate sections
 - If any section is missing information, note it as "Information pending"
-- Never include raw error messages or invalid content in the final document""",
-        ).compile()
+- Never include raw error messages or invalid content in the final document"""),
+            ("user", "{input}")
+        ])
 
-# Create the graph instance
-trip_planner_graph = create_trip_planner_graph_with_supervisor() 
+def chatbot(state: MessagesState):
+    return {"messages": [llm_with_tools.invoke(prompt.invoke(state["messages"]))]}
+
+class BasicToolNode:
+    """A node that runs the tools requested in the last AIMessage."""
+
+    def __init__(self, tools: list) -> None:
+        self.tools_by_name = {tool.name: tool for tool in tools}
+
+    def __call__(self, inputs: dict):
+        if messages := inputs.get("messages", []):
+            message = messages[-1]
+        else:
+            raise ValueError("No message found in input")
+        outputs = []
+        for tool_call in message.tool_calls:
+            tool_result = self.tools_by_name[tool_call["name"]].invoke(
+                tool_call["args"]
+            )
+            outputs.append(
+                ToolMessage(
+                    content=json.dumps(tool_result),
+                    name=tool_call["name"],
+                    tool_call_id=tool_call["id"],
+                )
+            )
+        return {"messages": outputs}
+
+tool_node = BasicToolNode(tools)
+
+def route_tools(state: MessagesState):
+    """
+    Use in the conditional_edge to route to the ToolNode if the last message
+    has tool calls. Otherwise, route to the end.
+    """
+    if isinstance(state, list):
+        ai_message = state[-1]
+    elif messages := state.get("messages", []):
+        ai_message = messages[-1]
+    else:
+        raise ValueError(f"No messages found in input state to tool_edge: {state}")
+    if hasattr(ai_message, "tool_calls") and len(ai_message.tool_calls) > 0:
+        return "tools"
+    return END
+
+
+# memory = MemorySaver()
+
+# Define the graph
+graph = (
+    StateGraph(MessagesState)
+    .add_node("chatbot", chatbot)
+    .add_node("tools", tool_node)
+    .add_edge(START, "chatbot")
+    .add_edge("tools", "chatbot")
+    .add_conditional_edges(
+        "chatbot",
+        route_tools,
+        {
+            "tools": "tools", END: END
+        },
+    )
+    .compile(name="Trip Planner Graph")
+)

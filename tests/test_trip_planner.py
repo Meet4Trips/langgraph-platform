@@ -1,6 +1,5 @@
-import os
 from dotenv import load_dotenv
-from src.agent.trip_graph import trip_planner_graph, TripState
+from examples.example_trip_graph_supervisor import trip_planner_graph, TripState
 
 def test_trip_planner():
     # Load environment variables
