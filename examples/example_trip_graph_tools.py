@@ -13,7 +13,7 @@ from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool
 from langgraph.types import interrupt
 
-from tool.tools import search_restaurants, search_hotels, search_attractions, search_flights, search_weather
+from src.agent.tools import search_restaurants, search_hotels, search_attractions, search_flights, search_weather
 
 @tool
 def human_assistance(query: str) -> str:

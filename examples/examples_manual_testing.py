@@ -6,7 +6,7 @@ Examples of different ways to test the main function pattern
 import asyncio
 import os
 from dotenv import load_dotenv
-from lib.google_places_client import text_search_restaurants
+from src.agent.google_places_client import text_search_restaurants
 
 # Load environment variables from .env file
 load_dotenv()

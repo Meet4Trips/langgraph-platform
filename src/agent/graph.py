@@ -6,11 +6,11 @@ from langchain_openai import ChatOpenAI
 
 # Try both import strategies to work in both local and deployment environments
 try:
-    from prompt.prompts import TRIP_PLANNER_WITH_TOOLS_PROMPT
-    from tool.tools import search_attractions, search_hotels, search_restaurants
+    from agent.prompts import TRIP_PLANNER_WITH_TOOLS_PROMPT
+    from agent.tools import search_attractions, search_hotels, search_restaurants
 except ImportError:
-    from src.prompt.prompts import TRIP_PLANNER_WITH_TOOLS_PROMPT
-    from src.tool.tools import search_attractions, search_hotels, search_restaurants
+    from agent.prompts import TRIP_PLANNER_WITH_TOOLS_PROMPT
+    from agent.tools import search_attractions, search_hotels, search_restaurants
 
 from langchain_core.messages import ToolMessage
 import json

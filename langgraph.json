@@ -1,11 +1,11 @@
 {
   "dependencies": ["."],
   "graphs": {
-    "agent": "./src/graph.py:graph"
+    "agent": "./src/agent/graph.py:graph"
   },
   "python_version": "3.13",
   "env": ".env",
   "auth": {
-    "path": "./src/auth.py:supabase_jwt_auth"
+    "path": "./src/agent/auth.py:supabase_jwt_auth"
   }
 }

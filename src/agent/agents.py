@@ -4,16 +4,16 @@ from typing import Any
 from venv import logger
 from langchain_openai import ChatOpenAI
 from langchain_tavily import TavilySearch
-from agent.utils.configuration import Configuration
 from langgraph.prebuilt.chat_agent_executor import create_react_agent
 from typing import Any
-from prompt.prompts import (
+from src.agent.utils.configuration import Configuration
+from src.agent.prompts import (
     RESEARCH_AGENT_PROMPT,
     RESTAURANT_FINDER_PROMPT,
     LOGISTICS_AGENT_PROMPT,
     POI_AGENT_PROMPT
 )
-from tool.tools import search_attractions, search_hotels, search_restaurants, search_flights
+from agent.tools import search_attractions, search_hotels, search_restaurants, search_flights
 
 def create_research_agent() -> Any:
     """Creates a research agent using the ReAct pattern."""
