@@ -3,8 +3,8 @@ from langgraph.prebuilt.chat_agent_executor import create_react_agent
 
 from agent.utils.configuration import Configuration
 from langchain_openai import ChatOpenAI
-from src.prompt.prompts import TRIP_PLANNER_WITH_TOOLS_PROMPT
-from src.tool.tools import search_attractions, search_hotels, search_restaurants
+from prompt.prompts import TRIP_PLANNER_WITH_TOOLS_PROMPT
+from tool.tools import search_attractions, search_hotels, search_restaurants
 from langchain_core.messages import ToolMessage
 import json
 

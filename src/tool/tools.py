@@ -2,7 +2,7 @@ from langchain_core.tools import tool
 from langchain_tavily import TavilySearch
 from typing import Literal
 
-from src.lib.google_places_client import text_search_attractions, text_search_hotels, text_search_restaurants 
+from lib.google_places_client import text_search_attractions, text_search_hotels, text_search_restaurants 
 
 @tool
 def search_weather(location: str, date: str = None) -> str:
