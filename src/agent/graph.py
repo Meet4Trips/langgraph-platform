@@ -1,11 +1,11 @@
 from langgraph.prebuilt.chat_agent_executor import create_react_agent
 
-from agent.utils.configuration import Configuration
+from src.agent.configuration import Configuration
 from langchain_core.runnables import RunnableConfig
 
-from src.agent.utils.tools import get_tools
-from src.agent.utils.utils import load_chat_model
-from src.agent.utils.prompts import ITINERARY_MARKDOWN_FORMAT, TRIP_PLANNER_WITH_TOOLS_PROMPT
+from src.agent.tools import get_tools
+from src.agent.prompts import ITINERARY_MARKDOWN_FORMAT, TRIP_PLANNER_WITH_TOOLS_PROMPT
+from src.agent.utils import load_chat_model
 
 async def create_trip_planner_graph(config: RunnableConfig):
 

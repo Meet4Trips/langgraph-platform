@@ -3,7 +3,7 @@
 from typing import Annotated, Literal
 from pydantic import Field
 
-from src.agent.utils.prompts import TRIP_PLANNER_WITH_TOOLS_PROMPT
+from src.agent.prompts import TRIP_PLANNER_WITH_TOOLS_PROMPT
 
 class Configuration:
     """The configuration for the agent."""

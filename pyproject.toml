@@ -44,9 +44,6 @@ packages = ["langgraph.templates.agent", "agent"]
 [tool.setuptools.package-data]
 "*" = ["py.typed"]
 
-[tool.setuptools.packages.find]
-include = ["src*"]
-
 [tool.ruff]
 lint.select = [
     "E",    # pycodestyle

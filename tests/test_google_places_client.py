@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 from dotenv import load_dotenv
-from src.agent.lib.google_places_client import text_search_restaurants
+from src.agent.google_places_client import text_search_restaurants
 
 # Load environment variables for tests
 load_dotenv()

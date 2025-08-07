@@ -6,7 +6,7 @@ from langchain_openai import ChatOpenAI
 from langchain_tavily import TavilySearch
 from langgraph.prebuilt.chat_agent_executor import create_react_agent
 from typing import Any
-from src.agent.utils.configuration import Configuration
+from src.agent.configuration import Configuration
 from src.agent.prompts import (
     RESEARCH_AGENT_PROMPT,
     RESTAURANT_FINDER_PROMPT,
