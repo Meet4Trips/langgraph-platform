@@ -1,53 +1,35 @@
 """Define the configurable parameters for the agent."""
 
-from __future__ import annotations
+from typing import Annotated, Literal
+from pydantic import Field
 
-from dataclasses import dataclass, field, fields
-from typing import Annotated
-import logging
-import json
+from src.agent.utils.prompts import TRIP_PLANNER_WITH_TOOLS_PROMPT
 
-from langchain_core.runnables import ensure_config
-from langgraph.config import get_config
-
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-@dataclass(kw_only=True)
 class Configuration:
     """The configuration for the agent."""
 
-    model: Annotated[str, {"__template_metadata__": {"kind": "llm"}}] = field(
-            default="gpt-4o-mini",
-            metadata={
-            "description": "The name of the language model to use for the agent's main interactions. "
+    model: Annotated[
+            Literal[
+                "openai/gpt-4o",
+                "openai/gpt-4o-mini",
+                "openai/gpt-4.1",
+                "openai/gpt-4.1-mini",
+            ], 
+            {"__template_metadata__": {"kind": "llm"}}
+        ] = Field(
+            default="openai/gpt-4o-mini",
+            description="The name of the language model to use for the agent's main interactions. "
             "Should be in the form: provider/model-name."
-        },
     )
 
-    @classmethod
-    def from_context(cls) -> Configuration:
-        """Create a Configuration instance from a RunnableConfig object."""
-        logger.info("Attempting to get configuration from context...")
-        try:
-            config = get_config()
-            logger.info("Successfully retrieved config from context")
-            logger.info(f"Raw config: {json.dumps(config.get('configurable', {}), indent=2, default=str)}")
-        except RuntimeError as e:
-            logger.warning(f"Failed to get config from context: {str(e)}")
-            config = None
-        
-        config = ensure_config(config)
-        logger.info(f"Ensured config: {json.dumps(config, indent=2, default=str)}")
-        
-        configurable = config.get("configurable") or {}
-        logger.info(f"Configurable parameters: {json.dumps(configurable, indent=2, default=str)}")
-        
-        _fields = {f.name for f in fields(cls) if f.init}
-        logger.info(f"Available fields: {_fields}")
-        
-        final_config = {k: v for k, v in configurable.items() if k in _fields}
-        logger.info(f"Final configuration: {json.dumps(final_config, indent=2, default=str)}")
-        
-        return cls(**final_config)
+    system_prompt: str = Field(
+        default_factory=lambda: TRIP_PLANNER_WITH_TOOLS_PROMPT,
+        description="The system prompt to use for the agent's interactions. "
+        "This prompt sets the context and behavior for the agent."
+    )
+
+    selected_tools: list[Literal["search_weather", "search_flights", "search_hotels", "search_attractions", "search_restaurants"]] = Field(
+        default_factory=lambda: ["search_weather", "search_flights", "search_hotels", "search_attractions", "search_restaurants"],
+        description="The list of tools to use for the agent's interactions. "
+        "This list should contain the names of the tools to use."
+    )

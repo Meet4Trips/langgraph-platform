@@ -2,7 +2,7 @@ from langgraph_supervisor import create_supervisor
 
 from src.agent.utils.configuration import Configuration
 from src.agent.prompts import TRIP_ASSISTANT_PROMPT
-from src.agent.agents import (
+from src.agent.utils.agents import (
     create_logistics_agent,
     create_poi_agent,
     create_research_agent,

@@ -156,13 +156,101 @@ IMPORTANT GUIDELINES:
 - If any section is missing information, note it as "Information pending"
 - Never include raw error messages or invalid content in the final document"""
 
-TRIP_PLANNER_WITH_TOOLS_PROMPT = """You are a travel planning planner and document assembler. Your role is to:
+
+ITINERARY_MARKDOWN_FORMAT = """
+    ```itinerary
+    {
+        "title": "Tokyo Day 1",
+        "date": "2024-04-01",
+        "location": "Tokyo, Japan",
+        "description": "Exploring `geo:Shibuya|$PLACE_ID` and `geo:Harajuku|$PLACE_ID` districts",
+        "itineraryItems": [
+            {
+            "timeOfDay": "Morning",
+            "iconName": "coffee",
+            "activities": [
+                {
+                "title": "Breakfast",
+                "description": "Traditional Japanese breakfast at hotel"
+                },
+                {
+                "title": "Meiji Shrine",
+                "description": "Visit the serene Meiji Shrine and its surrounding forest"
+                }
+            ]
+            },
+            {
+            "timeOfDay": "Afternoon",
+            "iconName": "sun",
+            "activities": [
+                {
+                "title": "Harajuku",
+                "description": "Shopping along Takeshita Street"
+                },
+                {
+                "title": "Lunch",
+                "description": "Try local street food and crepes"
+                }
+            ]
+            },
+            {
+            "timeOfDay": "Evening",
+            "iconName": "sunset",
+            "activities": [
+                {
+                    "title": "Shibuya Crossing",
+                    "description": "Experience the world's busiest pedestrian crossing"
+                },
+                {
+                    "title": "Dinner",
+                    "description": "Izakaya experience in Shibuya"
+                }
+            ]
+            }
+        ],
+        "accommodationSuggestions": [
+            {
+                "title": "Cerulean Tower Tokyu Hotel",
+                "description": "Luxury hotel with great city views in Shibuya",
+                "link": "$places.googleMapsUri"
+            },
+            {
+                "title": "Hotel Mets Shibuya",
+                "description": "Convenient mid-range option near Shibuya Station",
+                "link": "$places.googleMapsUri"
+            }
+        ],
+        "practicalTips": [
+            {
+                "title": "Transportation",
+                "description": "Get a PASMO or Suica card for easy train access",
+                "link": "$places.googleMapsUri"
+            },
+            {
+                "title": "Weather",
+                "description": "April is cherry blossom season - bring layers as temperatures can vary",
+                "link": "$places.googleMapsUri"
+            }
+        ],
+        "specialEvents": [
+            {
+                "title": "Cherry Blossom Festival",
+                "description": "Special evening illuminations at Yoyogi Park",
+                "link": "$places.googleMapsUri",
+                "website": "https://www.yoyogi-park.com/en/event/cherry-blossom-festival/"
+            }
+        ]
+    }
+    ```
+"""
+
+TRIP_PLANNER_WITH_TOOLS_PROMPT = f"""You are a travel planning planner and document assembler. Your role is to:
 
 1. Trip assistant and planner RESPONSIBILITIES:
    - Access to all tools [search_hotels, search≈_restaurants, search_attractions] to find accommodation, restaurants, points of interest information
-   - If the user's request is not related to the trip planning, please respond with: I'm sorry, but I am not designed to handle that request.
-   - For trip planning, please identify the location(s) and number of days, then utilize the available tools for each location and additional information
+   - You primary focus is to support the trip planning, please identify the location(s) and number of days, then utilize the available tools for each location and additional information
    - Once you have the information, assemble the information into a final travel plan (see 2. DOCUMENT ASSEMBLY RESPONSIBILITIES).
+   - For other requests, please make use of the tools to find the information and respond to the user. If no relevant information is found, please respond with: I'm sorry, but I am not designed to handle that request. Please ask the appropriate agent.
 
 2. DOCUMENT ASSEMBLY RESPONSIBILITIES:
    Your primary responsibility is to combine and format all information from the tools to draft the final travel plan into a beautiful, well-structured markdown document.
@@ -202,90 +290,11 @@ TRIP_PLANNER_WITH_TOOLS_PROMPT = """You are a travel planning planner and docume
            * pointOfInterestSuggestions: the point of interest suggestions of the day (if any)
 
        - Please reference the following format (as an example):
-       ```itinerary
-       {
-           "title": "Tokyo Day 1",
-           "date": "2024-04-01",
-           "location": "Tokyo, Japan",
-           "description": "Exploring `geo:Shibuya|$PLACE_ID` and `geo:Harajuku|$PLACE_ID` districts",
-           "itineraryItems": [
-               {
-               "timeOfDay": "Morning",
-               "iconName": "coffee",
-               "activities": [
-                   {
-                   "title": "Breakfast",
-                   "description": "Traditional Japanese breakfast at hotel"
-                   },
-                   {
-                   "title": "Meiji Shrine",
-                   "description": "Visit the serene Meiji Shrine and its surrounding forest"
-                   }
-               ]
-               },
-               {
-               "timeOfDay": "Afternoon",
-               "iconName": "sun",
-               "activities": [
-                   {
-                   "title": "Harajuku",
-                   "description": "Shopping along Takeshita Street"
-                   },
-                   {
-                   "title": "Lunch",
-                   "description": "Try local street food and crepes"
-                   }
-               ]
-               },
-               {
-               "timeOfDay": "Evening",
-               "iconName": "sunset",
-               "activities": [
-                   {
-                       "title": "Shibuya Crossing",
-                       "description": "Experience the world's busiest pedestrian crossing"
-                   },
-                   {
-                       "title": "Dinner",
-                       "description": "Izakaya experience in Shibuya"
-                   }
-               ]
-               }
-           ],
-           "accommodationSuggestions": [
-               {
-                   "title": "Cerulean Tower Tokyu Hotel",
-                   "description": "Luxury hotel with great city views in Shibuya",
-                   "link": "https://www.google.com/maps/search/?api=1&query=Google&query_place_id=ChIJN1t_t354bIcR2v0o0mY73GQ"
-               },
-               {
-                   "title": "Hotel Mets Shibuya",
-                   "description": "Convenient mid-range option near Shibuya Station",
-                   "link": "https://www.google.com/maps/search/?api=1&query=Google&query_place_id=ChIJN1t_t354bIcR2v0o0mY73GQ"
-               }
-           ],
-           "practicalTips": [
-               {
-                   "title": "Transportation",
-                   "description": "Get a PASMO or Suica card for easy train access",
-                   "link": "https://www.google.com/maps/search/?api=1&query=Google&query_place_id=ChIJN1t_t354bIcR2v0o0mY73GQ"
-               },
-               {
-                   "title": "Weather",
-                   "description": "April is cherry blossom season - bring layers as temperatures can vary",
-                   "link": "https://www.google.com/maps/search/?api=1&query=Google&query_place_id=ChIJN1t_t354bIcR2v0o0mY73GQ"
-               }
-           ],
-           "specialEvents": [
-               {
-                   "title": "Cherry Blossom Festival",
-                   "description": "Special evening illuminations at Yoyogi Park",
-                   "link": "https://www.google.com/maps/search/?api=1&query=Google&query_place_id=ChIJN1t_t354bIcR2v0o0mY73GQ",
-                   "website": "https://www.yoyogi-park.com/en/event/cherry-blossom-festival/"
-               }
-           ]
-       }
-       ```
+       ***itinerary_markdown_format***
+   2.1 Special Markdown for geo location:
+       - If the location is a geo location, please use the following format:
+       `geo:$places.displayName|places.id`
+
 
    3. Structure the document with these sections:
       # Trip Overview

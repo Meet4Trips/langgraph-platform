@@ -13,7 +13,7 @@ from src.agent.prompts import (
     LOGISTICS_AGENT_PROMPT,
     POI_AGENT_PROMPT
 )
-from agent.tools import search_attractions, search_hotels, search_restaurants, search_flights
+from .tools import search_attractions, search_hotels, search_restaurants, search_flights
 
 def create_research_agent() -> Any:
     """Creates a research agent using the ReAct pattern."""
